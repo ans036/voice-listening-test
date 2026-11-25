@@ -46,6 +46,8 @@ select { font: inherit; padding: 10px; border-radius: 8px; border: 1px solid var
 input.codein { font-family: var(--font-mono); font-size: 18px; letter-spacing: .06em; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); max-width: 16rem; text-transform: uppercase; }
 textarea { font: inherit; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); width: 100%; resize: vertical; }
 .small { font-size: 13px; }
+.sgic { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; }
+.sgic input.codein { max-width: 6rem; text-align: center; }
 .check { display: flex; gap: 10px; align-items: flex-start; }
 .check input { margin-top: 5px; width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
 button { font: inherit; cursor: pointer; border-radius: 8px; }
@@ -102,9 +104,14 @@ a.sendlink { display: inline-block; text-decoration: none; border-radius: 8px; }
       <li>We ask a few questions about you (age band, gender, hearing, how you are listening). We never ask your name or contact details.</li>
       <li>Your answers are sent automatically when you finish, and are reported only as group results in research on speech synthesis.</li>
     </ul>
-    <div class="field"><label for="pcode">Your participant code</label>
-      <input id="pcode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="16" placeholder="for example 7KQ2-M9XD-4" class="codein">
-      <span class="muted small">You received this code from the person who invited you. Each code can be used once. It is not linked to your name.</span></div>
+    <div class="sgic">
+      <p class="muted small">So that each person takes part only once, please answer three quick questions. Your browser turns the answers into a scrambled anonymous ID; your answers themselves are never sent or stored.</p>
+      <div class="field"><label for="id-parent">First two letters of your mother's (or a parent's) first name</label>
+        <input id="id-parent" type="text" autocomplete="off" spellcheck="false" maxlength="2" class="codein" placeholder="e.g. MA"></div>
+      <div class="field"><label for="id-day">Day of the month you were born</label><select id="id-day"></select></div>
+      <div class="field"><label for="id-town">First two letters of the town or city where you were born</label>
+        <input id="id-town" type="text" autocomplete="off" spellcheck="false" maxlength="2" class="codein" placeholder="e.g. KO"></div>
+    </div>
     <label class="check"><input type="checkbox" id="consent"><span>I am 18 or older, I have read the above, and I agree to take part.</span></label>
     <div class="err" id="start-err" hidden></div>
     <button class="primary" id="b-start" disabled>Continue</button>
@@ -219,11 +226,11 @@ function makePlan(seed) {
   return [...b1, ...block("1.5", DATA.blocks["1.5"], DATA.fast, DATA.nF), ...block("2", DATA.blocks["2"], DATA.fast, DATA.nF)];
 }
 
-// ---- participant code (one per person, from the researcher's Sheet): 8 characters + 1 check character (same rule as the Apps Script) ----
+// ---- anonymous participant ID (self-generated): SHA-256 of three answers only the listener knows, made in the browser; only the ID is sent ----
 let PENDING_CODE = "";
-function normCode(c) { return String(c || "").toUpperCase().replace(/[\s-]/g, "").replace(/O/g, "0").replace(/[IL]/g, "1").replace(/U/g, "V"); }
-function checkChar(s) { let t = 0; for (const ch of s) t = (t * 7 + ALPH.indexOf(ch) + 1) % 32; return ALPH[t]; }
-function pcodeOk(n) { return /^[0-9A-HJKMNP-TV-Z]{9}$/.test(n) && checkChar(n.slice(0, 8)) === n[8]; }
+function letters2(v) { const s = String(v || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/[^\p{L}]/gu, ""); return s.length >= 2 ? s.slice(0, 2) : ""; }
+function sgicAnswers(p, d, t) { const a = letters2(p), b = letters2(t), day = parseInt(d, 10); return (a && b && day >= 1 && day <= 31) ? `VAB979|${a}|${day}|${b}` : ""; }
+async function anonId(s) { const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)); return [...new Uint8Array(h)].slice(0, 8).map(x => x.toString(16).padStart(2, "0")).join(""); }
 
 // ---- result code: bits -> base32 (Crockford-like) + 2-char checksum ----
 function encode(st) {
@@ -304,9 +311,9 @@ async function submit(code) {
   let j = null;
   try { const r = await fetch(url, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body }); j = await r.json(); } catch (e) { j = null; }
   if (j && j.ok) { S.sent = true; save(); setStatus("Your answers have been received. Thank you! You can close this page.", "ok"); $("send-fallback").hidden = true; return; }
-  if (j && /participant code/.test(j.error || "")) {
-    S.rejected = j.error === "participant code used" ? "This participant code has already been used, so these answers were not recorded. Each code can be used once."
-                                                     : "Your participant code was not recognised, so these answers were not recorded.";
+  if (j && /^participant/.test(j.error || "")) {
+    S.rejected = j.error === "participant taken" ? "It looks like you have already taken part, so these answers were not recorded. Each person can take part only once."
+                                                 : "Your anonymous ID could not be checked, so these answers were not recorded.";
     save(); $("send-fallback").hidden = true; setStatus(S.rejected, "bad"); return;
   }
   if (j) { setStatus("We could not send your answers automatically.", "bad"); $("retry-row").hidden = false; $("send-fallback").hidden = false; return; }
@@ -321,20 +328,23 @@ function init() {
   for (const [k, id] of FIELDS) { const el = $(id); el.innerHTML = `<option value="">Choose…</option>` + Q[k].map((o, i) => `<option value="${i}">${o}</option>`).join(""); }
   $("scale").innerHTML = SCALE.map((s, i) => `<button type="button" data-v="${i}" aria-pressed="false" aria-label="${s}" disabled><span class="s">${SHORT[i]}</span><span class="l">${s}</span></button>`).join("");
   PA = makePlayer($("pa"), $("sa"), $("ga"), "A"); PB = makePlayer($("pb"), $("sb"), $("gb"), "B"); PC = makePlayer($("b-check"), $("checkstate"), $("checkprog"), "");
-  const startReady = () => { $("b-start").disabled = !($("consent").checked && pcodeOk(normCode($("pcode").value))); };
-  $("consent").onchange = startReady; $("pcode").oninput = () => { $("start-err").hidden = true; startReady(); };
+  $("id-day").innerHTML = `<option value="">Choose…</option>` + Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
+  const answers = () => sgicAnswers($("id-parent").value, $("id-day").value, $("id-town").value);
+  const startReady = () => { $("b-start").disabled = !($("consent").checked && answers()); };
+  for (const id of ["consent", "id-parent", "id-day", "id-town"]) { $(id).oninput = () => { $("start-err").hidden = true; startReady(); }; $(id).onchange = $(id).oninput; }
   $("b-start").onclick = async () => {
-    const n = normCode($("pcode").value); const err = m => { $("start-err").textContent = m; $("start-err").hidden = false; };
-    if (!pcodeOk(n)) return err("Please check your participant code: it should look like 7KQ2-M9XD-4.");
-    const url = (window.LISTEN_CONFIG || {}).submitUrl || ""; $("b-start").disabled = true; $("b-start").textContent = "Checking your code…";
+    const err = m => { $("start-err").textContent = m; $("start-err").hidden = false; };
+    const s = answers(); if (!s) return err("Please answer the three questions (two letters, a day, two letters).");
+    const url = (window.LISTEN_CONFIG || {}).submitUrl || ""; $("b-start").disabled = true; $("b-start").textContent = "Checking…";
     try {
+      const id = await anonId(s);
       if (url.startsWith("https://script.google.com/")) {
-        const r = await fetch(url + "?action=check&code=" + encodeURIComponent(n)); const j = await r.json();
-        if (j.status === "used") return err("This participant code has already been used. Each code can be used only once.");
-        if (j.status !== "ok") return err("We do not recognise this participant code. Please check it and try again.");
+        const r = await fetch(url + "?action=check&id=" + id); const j = await r.json();
+        if (j.status === "taken") return err("It looks like you have already taken part. Thank you! Each person can take part only once.");
+        if (j.status !== "ok") return err("Something went wrong while checking. Please try again in a moment.");
       }
-      PENDING_CODE = n; show("v-about");
-    } catch (e) { err("We could not check your code. Please check your internet connection and try again."); }
+      PENDING_CODE = id; show("v-about");
+    } catch (e) { err("We could not continue. Please check your internet connection and try again."); }
     finally { $("b-start").textContent = "Continue"; startReady(); }
   };
   $("comment").oninput = () => { $("comment-count").textContent = `${$("comment").value.length} / 3000`; };

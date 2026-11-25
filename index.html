@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Blind Voice Comparison</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
+<style>
+/* Layout: one calm column like a lab booth form; a slim sticky progress rail; A and B as twin equal panels (no colour favours either). */
+:root {
+  --bg: #f3f5f4; --surface: #ffffff; --ink: #18211f; --muted: #5b6763; --line: #d6dcda;
+  --accent: #1d6b57; --accent-ink: #ffffff; --accent-soft: #e2efe9; --warn: #9a3412;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111816; --surface: #18211e; --ink: #e6ece9; --muted: #9aa8a3; --line: #2c3834;
+  --accent: #5fbf9f; --accent-ink: #0d1412; --accent-soft: #1d2e28; --warn: #f0a070; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111816; --surface: #18211e; --ink: #e6ece9; --muted: #9aa8a3; --line: #2c3834;
+  --accent: #5fbf9f; --accent-ink: #0d1412; --accent-soft: #1d2e28; --warn: #f0a070; color-scheme: dark }
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.55; }
+.wrap { max-width: 720px; margin: 0 auto; padding-block: 24px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 20px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.rail { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px; }
+.rail .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.rail .fill { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+.rail .lbl { font-size: 13px; color: var(--muted); margin-top: 6px; font-variant-numeric: tabular-nums; }
+h1, h2 { font-family: var(--font-display); line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(28px, 6vw, 40px); }
+h2 { font-size: 22px; }
+p { margin: 0; max-width: 65ch; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 14px; }
+.muted { color: var(--muted); }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+ul.facts { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.field { display: grid; gap: 6px; }
+.field label { font-weight: 500; }
+select { font: inherit; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); max-width: 100%; }
+.check { display: flex; gap: 10px; align-items: flex-start; }
+.check input { margin-top: 5px; width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+button { font: inherit; cursor: pointer; border-radius: 8px; }
+.primary { background: var(--accent); color: var(--accent-ink); border: 0; padding: 12px 20px; font-weight: 600; justify-self: start; }
+.primary:disabled { opacity: .45; cursor: not-allowed; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.err { color: var(--warn); font-size: 14px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.player { border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 10px; background: var(--surface); min-width: 0; }
+.player .tag { font-family: var(--font-display); font-size: 28px; font-weight: 700; }
+.player button { border: 1px solid var(--line); background: var(--accent-soft); color: var(--ink); padding: 10px 14px; font-weight: 600; }
+.player .prog { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.player .prog i { display: block; height: 100%; width: 0; background: var(--accent); }
+.player .state { font-size: 13px; color: var(--muted); }
+.scale { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.scale button { border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 10px 4px; font-size: 13px; line-height: 1.25; min-height: 64px; }
+.scale button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.scale button:disabled { opacity: .4; cursor: not-allowed; }
+.ends { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+.code { font-family: var(--font-mono); font-size: clamp(16px, 4.5vw, 22px); letter-spacing: .04em; word-break: break-all; background: var(--accent-soft); border-radius: 8px; padding: 14px; user-select: all; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.ghost { border: 1px solid var(--line); background: transparent; color: var(--ink); padding: 10px 16px; }
+a.sendlink { display: inline-block; text-decoration: none; border-radius: 8px; }
+@media (max-width: 560px) {
+  .pair { grid-template-columns: 1fr; }
+  .scale { grid-template-columns: 1fr; }
+  .scale button { min-height: 0; text-align: left; padding: 12px; }
+  .ends { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .rail .fill { transition: none; } }
+.status { font-weight: 500; }
+.status.ok { color: var(--accent); }
+.status.bad { color: var(--warn); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="rail" id="rail" hidden><div class="bar"><div class="fill" id="fill"></div></div><div class="lbl" id="raillbl"></div></div>
+
+  <section id="v-welcome" class="card">
+    <div class="eyebrow">Listening study · about 15 minutes</div>
+    <h1>Which voice sounds more natural?</h1>
+    <p>You will hear pairs of short recordings of English sentences, each 5 to 15 seconds long. In every pair, both recordings say the same words at the same speed. Some are made by computer voices and some are a real person reading. You will not be told which is which.</p>
+    <p>For each pair, choose which recording sounds more natural, meaning more like a real person reading aloud, and by how much. There are 34 pairs: first at normal speed, then 1.5 times faster, then 2 times faster.</p>
+    <ul class="facts">
+      <li>Please use headphones or earphones in a quiet place if you can.</li>
+      <li>Taking part is voluntary. You can stop at any time, and nothing is saved until you choose to send your code.</li>
+      <li>We ask a few questions about you (age band, gender, hearing, how you are listening). We do not ask your name or contact details.</li>
+      <li>At the end you get a short code that contains your answers. You send that code to the person who invited you.</li>
+      <li>Your answers are used for research on speech synthesis and reported only as group results.</li>
+    </ul>
+    <label class="check"><input type="checkbox" id="consent"><span>I am 18 or older, I have read the above, and I agree to take part.</span></label>
+    <button class="primary" id="b-start" disabled>Continue</button>
+  </section>
+
+  <section id="v-about" class="card" hidden>
+    <div class="eyebrow">About you</div>
+    <h2>A few questions first</h2>
+    <p class="muted">These help us understand differences between listeners. Every question has a "Prefer not to say" option.</p>
+    <div class="field"><label for="q-age">Age</label><select id="q-age"></select></div>
+    <div class="field"><label for="q-gender">Gender</label><select id="q-gender"></select></div>
+    <div class="field"><label for="q-hearing">Do you have any hearing difficulty?</label><select id="q-hearing"></select></div>
+    <div class="field"><label for="q-device">What are you listening on?</label><select id="q-device"></select></div>
+    <div class="field"><label for="q-env">Where are you listening?</label><select id="q-env"></select></div>
+    <div class="field"><label for="q-eng">English is your</label><select id="q-eng"></select></div>
+    <div class="field"><label for="q-tts">How often do you hear computer voices (assistants, navigation, screen readers)?</label><select id="q-tts"></select></div>
+    <div class="field"><label for="q-team">Did you help build any of the voices in this study?</label><select id="q-team"></select></div>
+    <div class="err" id="about-err" hidden>Please answer every question (you can choose "Prefer not to say").</div>
+    <button class="primary" id="b-about">Continue</button>
+  </section>
+
+  <section id="v-check" class="card" hidden>
+    <div class="eyebrow">Sound check</div>
+    <h2>Set a comfortable volume</h2>
+    <p>Play this recording and adjust your volume so speech is clear and comfortable. Keep the volume the same for the rest of the study.</p>
+    <div class="player" id="checkplayer"><div class="row"><button id="b-check">Play</button><span class="state" id="checkstate">Not played yet</span></div><div class="prog"><i id="checkprog"></i></div></div>
+    <button class="primary" id="b-check-next" disabled>Start the comparisons</button>
+  </section>
+
+  <section id="v-block" class="card" hidden>
+    <div class="eyebrow" id="blk-eyebrow"></div>
+    <h2 id="blk-title"></h2>
+    <p id="blk-text"></p>
+    <button class="primary" id="b-block">Begin</button>
+  </section>
+
+  <section id="v-trial" class="card" hidden>
+    <div class="eyebrow" id="tr-eyebrow"></div>
+    <h2>Which recording sounds more natural?</h2>
+    <p class="muted">Play both recordings to the end. You can replay them as often as you like.</p>
+    <div class="pair">
+      <div class="player"><div class="tag">A</div><div class="row"><button id="pa">Play A</button><span class="state" id="sa">Not played yet</span></div><div class="prog"><i id="ga"></i></div></div>
+      <div class="player"><div class="tag">B</div><div class="row"><button id="pb">Play B</button><span class="state" id="sb">Not played yet</span></div><div class="prog"><i id="gb"></i></div></div>
+    </div>
+    <div class="scale" id="scale" role="group" aria-label="Your choice"></div>
+    <div class="ends"><span>A is more natural</span><span>B is more natural</span></div>
+    <div class="err" id="tr-err" hidden>Play both recordings to the end first.</div>
+    <button class="primary" id="b-next" disabled>Next pair</button>
+  </section>
+
+  <section id="v-done" class="card" hidden>
+    <div class="eyebrow">Finished · thank you</div>
+    <h2>Thank you for taking part</h2>
+    <p class="status" id="send-status">Sending your answers…</p>
+    <div class="row" id="retry-row" hidden><button class="primary" id="b-retry">Try sending again</button></div>
+    <p class="muted">Your result code (it contains your answers and nothing else). Keep it in case sending fails:</p>
+    <div class="code" id="code"></div>
+    <div class="row"><button class="ghost" id="b-copy">Copy code</button><span class="muted" id="copied" hidden>Copied</span></div>
+    <p class="muted" id="send-fallback" hidden>If sending keeps failing, copy the code and send it to the person who invited you by message or email.</p>
+  </section>
+</div>
+
+<script src="config.js"></script>
+<script>
+const DATA = {"blocks":{"1":[0,1,2,3,4,5,6,7],"1.5":[0,1,2,3,4,5,6],"2":[0,1,2,3,4,5,6,9]},"n1":14,"nF":9,"s1":["S00","S01","S02","S04","S05","S06","S09","S10","S11","S12","S13"],"fast":["F00","F01","F03","F05","F06","F07","F08","F09","F10","F11","F12","F13"],"anchor":"A00","anchorSys":8,"realSys":7,"clips":{"S00|1|0":"xqjhyr4s.flac","S00|1|1":"2yu4z9ac.flac","S00|1|2":"3zr6gg2h.flac","S00|1|3":"2mvmt3p7.flac","S00|1|4":"82vbs27x.flac","S00|1|5":"b8hyfg7n.flac","S00|1|6":"dgum7dxt.flac","S00|1|7":"cndge4wu.flac","S01|1|0":"cxz4bvr6.flac","S01|1|1":"ue3phsx4.flac","S01|1|2":"wpkwj643.flac","S01|1|3":"r82b5h8d.flac","S01|1|4":"2svnystt.flac","S01|1|5":"k2xywg5p.flac","S01|1|6":"uxjdatv5.flac","S01|1|7":"dp9ghbat.flac","S02|1|0":"4zqe5umk.flac","S02|1|1":"ecjykxab.flac","S02|1|2":"bf7jdhuh.flac","S02|1|3":"6jpfkqtz.flac","S02|1|4":"tr6e4ykk.flac","S02|1|5":"7r9ae838.flac","S02|1|6":"g7bqren7.flac","S02|1|7":"tezf2cb4.flac","S04|1|0":"v2wrck22.flac","S04|1|1":"7brmavgf.flac","S04|1|2":"7xf47va7.flac","S04|1|3":"p8y8a7pe.flac","S04|1|4":"4zu4gnhr.flac","S04|1|5":"74cyyxj6.flac","S04|1|6":"bwdxbuza.flac","S04|1|7":"3xjb2cec.flac","S05|1|0":"vxzyygbv.flac","S05|1|1":"3xhzxg8v.flac","S05|1|2":"55badu98.flac","S05|1|3":"zbe4vffq.flac","S05|1|4":"e67m7bsu.flac","S05|1|5":"mv2exaef.flac","S05|1|6":"2nybrb7z.flac","S05|1|7":"sq3cbyz5.flac","S06|1|0":"5ye94278.flac","S06|1|1":"er7dqf3d.flac","S06|1|2":"k7rrpay2.flac","S06|1|3":"9xx6ux2p.flac","S06|1|4":"kbp7erf8.flac","S06|1|5":"wp2yvb7k.flac","S06|1|6":"jtwjhd2c.flac","S06|1|7":"n9pvgd2j.flac","S09|1|0":"2tcn2mng.flac","S09|1|1":"xsw4kecs.flac","S09|1|2":"d5t5z5xy.flac","S09|1|3":"33mny3cf.flac","S09|1|4":"npe6p8vb.flac","S09|1|5":"x48y25t8.flac","S09|1|6":"5w6j68cd.flac","S09|1|7":"e32xfa9w.flac","S10|1|0":"vgx5ehk8.flac","S10|1|1":"kc2vnck4.flac","S10|1|2":"k3xgxmsm.flac","S10|1|3":"zj4wx6dr.flac","S10|1|4":"ne3tseuf.flac","S10|1|5":"239f6h6y.flac","S10|1|6":"mhk9mm5b.flac","S10|1|7":"da5sug4k.flac","S11|1|0":"qvf9t89j.flac","S11|1|1":"fjnynmh4.flac","S11|1|2":"nzbxhhhr.flac","S11|1|3":"f62bk9af.flac","S11|1|4":"3x5q7kzp.flac","S11|1|5":"5xuqs55c.flac","S11|1|6":"vkedec8w.flac","S11|1|7":"anx6cav9.flac","S12|1|0":"ksznuvdx.flac","S12|1|1":"h59w4jk9.flac","S12|1|2":"mrcf6v8k.flac","S12|1|3":"mz43shk2.flac","S12|1|4":"b2yzp4ky.flac","S12|1|5":"eytt43ww.flac","S12|1|6":"qb5kznqm.flac","S12|1|7":"rvnbptt9.flac","S13|1|0":"cevz46n6.flac","S13|1|1":"6u8h8xq5.flac","S13|1|2":"xtbz5xgx.flac","S13|1|3":"scjb6psg.flac","S13|1|4":"j5c4yhd6.flac","S13|1|5":"6cu9qjtg.flac","S13|1|6":"ew8fha5j.flac","S13|1|7":"ewzhts8z.flac","A00|1|7":"e6y9zfma.flac","A00|1|8":"fvsy4tdn.flac","F00|1.5|0":"xvcgykus.flac","F00|1.5|1":"tgh8dkwj.flac","F00|1.5|2":"p3qq2zkd.flac","F00|1.5|3":"652r4kp6.flac","F00|1.5|4":"vw2jzf5r.flac","F00|1.5|5":"6szudwxu.flac","F00|1.5|6":"nhmafgg2.flac","F00|2|0":"8guuq4wj.flac","F00|2|1":"m3sthm4e.flac","F00|2|2":"mujpn5nw.flac","F00|2|3":"bmztnrf4.flac","F00|2|4":"gmg2v3w3.flac","F00|2|5":"484a3dr8.flac","F00|2|6":"cbxnbdbh.flac","F01|1.5|0":"d2pty7dp.flac","F01|1.5|1":"dqjzgpuf.flac","F01|1.5|2":"8ysu99rs.flac","F01|1.5|3":"ugbueznp.flac","F01|1.5|4":"qruvu8e6.flac","F01|1.5|5":"aa4qwj6d.flac","F01|1.5|6":"kv88ycx3.flac","F01|2|0":"97zxgypu.flac","F01|2|1":"fnwj8gfr.flac","F01|2|2":"aksc6s6p.flac","F01|2|3":"zcumusn6.flac","F01|2|4":"w3d94ny2.flac","F01|2|5":"gzxvzu8p.flac","F01|2|6":"ed4thqty.flac","F03|1.5|0":"feg3wxhm.flac","F03|1.5|1":"8u9pznqf.flac","F03|1.5|2":"5axgupdq.flac","F03|1.5|3":"mkrc5ajb.flac","F03|1.5|4":"gf5qru6u.flac","F03|1.5|5":"gcwzpurw.flac","F03|1.5|6":"qk5js9v6.flac","F03|2|0":"ekrjr368.flac","F03|2|1":"me4b3u88.flac","F03|2|2":"c43tgpy3.flac","F03|2|3":"x9y67tv8.flac","F03|2|4":"9eerseks.flac","F03|2|5":"k2n55ppg.flac","F03|2|6":"a23harrk.flac","F05|1.5|0":"46tg7sq7.flac","F05|1.5|1":"9825z8fv.flac","F05|1.5|2":"3axhydyh.flac","F05|1.5|3":"hkdjhnyg.flac","F05|1.5|4":"xsks2uxy.flac","F05|1.5|5":"3kbr9m8u.flac","F05|1.5|6":"me66cpwa.flac","F05|2|0":"ttqn24rc.flac","F05|2|1":"3hmn9jjb.flac","F05|2|2":"st7c856h.flac","F05|2|3":"ndbjwcbz.flac","F05|2|4":"ywjerpkm.flac","F05|2|5":"rfhbycfq.flac","F05|2|6":"cq6wd7hv.flac","F06|1.5|0":"xpwpgvg2.flac","F06|1.5|1":"b2hj82vu.flac","F06|1.5|2":"sywchscj.flac","F06|1.5|3":"rxtxgpcm.flac","F06|1.5|4":"edqm4ase.flac","F06|1.5|5":"pq5z4esx.flac","F06|1.5|6":"vs2v37kh.flac","F06|2|0":"xd84v7bp.flac","F06|2|1":"6cktq89b.flac","F06|2|2":"wvqqecaf.flac","F06|2|3":"f9phbtyn.flac","F06|2|4":"r9fu6unb.flac","F06|2|5":"b73q3t3m.flac","F06|2|6":"nxq4uxbb.flac","F07|1.5|0":"wdxbmyrs.flac","F07|1.5|1":"pzxdbuxw.flac","F07|1.5|2":"tf3r7h3a.flac","F07|1.5|3":"jg5rzarr.flac","F07|1.5|4":"nn4r2q79.flac","F07|1.5|5":"udyzmgtg.flac","F07|1.5|6":"zhfvfufu.flac","F07|2|0":"agdutbqu.flac","F07|2|1":"5nphrfe4.flac","F07|2|2":"9rkm5ch3.flac","F07|2|3":"mevb8pta.flac","F07|2|4":"ajuuy6wk.flac","F07|2|5":"kywc5j3n.flac","F07|2|6":"d5zu299h.flac","F08|1.5|0":"rk34rgnd.flac","F08|1.5|1":"g4xbcvac.flac","F08|1.5|2":"hcb8upn5.flac","F08|1.5|3":"yhvp69rd.flac","F08|1.5|4":"s5twqsfb.flac","F08|1.5|5":"4tdfva9n.flac","F08|1.5|6":"htba3jxg.flac","F08|2|0":"7zpgrb68.flac","F08|2|1":"4hegk55e.flac","F08|2|2":"t3ztgj36.flac","F08|2|3":"mdgx4pmj.flac","F08|2|4":"4cjk7jsu.flac","F08|2|5":"akvnufyr.flac","F08|2|6":"zdurzkrw.flac","F09|1.5|0":"zw5pcj2k.flac","F09|1.5|1":"3adh69s4.flac","F09|1.5|2":"zgzg2d3c.flac","F09|1.5|3":"b8hf3hgw.flac","F09|1.5|4":"4pe9rgjn.flac","F09|1.5|5":"vjdw9xqm.flac","F09|1.5|6":"ecnduufc.flac","F09|2|0":"2nqysfvz.flac","F09|2|1":"nzbvsjpf.flac","F09|2|2":"sg6f6f4a.flac","F09|2|3":"9yw44p4t.flac","F09|2|4":"dk8z5j3z.flac","F09|2|5":"ydsavue6.flac","F09|2|6":"8rdskqgq.flac","F10|1.5|0":"b95werek.flac","F10|1.5|1":"xuucfbgf.flac","F10|1.5|2":"tm5rsjs2.flac","F10|1.5|3":"uw4ksy3k.flac","F10|1.5|4":"g4ptr45w.flac","F10|1.5|5":"pf2k2s48.flac","F10|1.5|6":"spvvfpne.flac","F10|2|0":"at3qyx2t.flac","F10|2|1":"c6axy4fa.flac","F10|2|2":"rfrcp9yp.flac","F10|2|3":"w9kbxsuq.flac","F10|2|4":"u3qjwkv5.flac","F10|2|5":"wmp9wd33.flac","F10|2|6":"gunbeu5t.flac","F11|1.5|0":"3nqhfh4y.flac","F11|1.5|1":"qwemdb63.flac","F11|1.5|2":"naq6kz7f.flac","F11|1.5|3":"wwhh393m.flac","F11|1.5|4":"2y4y9rpe.flac","F11|1.5|5":"xg75eyv4.flac","F11|1.5|6":"7rcb2sz7.flac","F11|2|0":"grqamzng.flac","F11|2|1":"edq752q8.flac","F11|2|2":"4yn6fvnu.flac","F11|2|3":"pru562vx.flac","F11|2|4":"77mws8m4.flac","F11|2|5":"2ptyue8a.flac","F11|2|6":"brm56p4x.flac","F12|1.5|0":"xsnvbcpu.flac","F12|1.5|1":"y24xgy9x.flac","F12|1.5|2":"ukpg6g3c.flac","F12|1.5|3":"bgvb47v4.flac","F12|1.5|4":"ctqyg7c5.flac","F12|1.5|5":"a983v5g4.flac","F12|1.5|6":"hhqp93he.flac","F12|2|0":"d43c2nz7.flac","F12|2|1":"r8s5njb5.flac","F12|2|2":"ktmuwacq.flac","F12|2|3":"2xu7zwtu.flac","F12|2|4":"f98pdz6t.flac","F12|2|5":"m22643rk.flac","F12|2|6":"gkred46z.flac","F13|1.5|0":"8ehsz8sd.flac","F13|1.5|1":"p3g4etm9.flac","F13|1.5|2":"qcf8d95k.flac","F13|1.5|3":"c2wdgjzw.flac","F13|1.5|4":"85wnhpp9.flac","F13|1.5|5":"nzka8ve5.flac","F13|1.5|6":"4mwn98zc.flac","F13|2|0":"4uf3hx9a.flac","F13|2|1":"u3n9tpsh.flac","F13|2|2":"6e3de4rk.flac","F13|2|3":"nwanrfen.flac","F13|2|4":"gf9tcjuk.flac","F13|2|5":"65m8224s.flac","F13|2|6":"x3ykzqmp.flac","F00|2|9":"dftypyet.flac","F01|2|9":"7me9mjcg.flac","F03|2|9":"yk4p28zb.flac","F05|2|9":"yntsdwyu.flac","F06|2|9":"es4mu6zc.flac","F07|2|9":"hfq3t6yu.flac","F08|2|9":"ec9btqed.flac","F09|2|9":"uarw2c2u.flac","F10|2|9":"g24cvc3p.flac","F11|2|9":"k2kc8j9z.flac","F12|2|9":"2ex7wf85.flac","F13|2|9":"pcs327p6.flac"},"checkClip":"e6y9zfma.flac"};
+const Q = {
+  age: ["18 to 24", "25 to 34", "35 to 44", "45 to 54", "55 to 64", "65 or over", "Prefer not to say"],
+  gender: ["Woman", "Man", "Non-binary", "Another gender identity", "Prefer not to say"],
+  hearing: ["No known hearing difficulty", "Some difficulty, no hearing aid", "I use a hearing aid or cochlear implant", "Not sure", "Prefer not to say"],
+  device: ["Over-ear or on-ear headphones", "In-ear earphones or earbuds", "Laptop or computer speakers", "Phone or tablet speaker", "Separate speakers", "Other", "Prefer not to say"],
+  env: ["A quiet room", "Some background noise", "A noisy place", "Prefer not to say"],
+  eng: ["First language", "Fluent second language", "Intermediate", "Basic", "Prefer not to say"],
+  tts: ["Often", "Sometimes", "Rarely or never", "Prefer not to say"],
+  team: ["No", "Yes", "Prefer not to say"]
+};
+const FIELDS = [["age", "q-age"], ["gender", "q-gender"], ["hearing", "q-hearing"], ["device", "q-device"], ["env", "q-env"], ["eng", "q-eng"], ["tts", "q-tts"], ["team", "q-team"]];
+const SCALE = ["A much more natural", "A more natural", "A slightly more natural", "About the same", "B slightly more natural", "B more natural", "B much more natural"];
+const ALPH = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+const $ = id => document.getElementById(id);
+const store = { get() { try { return JSON.parse(localStorage.getItem("vab1") || "null"); } catch (e) { return null; } },
+                set(v) { try { localStorage.setItem("vab1", JSON.stringify(v)); } catch (e) {} } };
+
+// ---- the trial plan: mulberry32 + Fisher-Yates (the decoder repeats this exactly) ----
+function mulberry32(a) { return function () { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function makePlan(seed) {
+  const rng = mulberry32(seed);
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const pairs = n => { const p = []; for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) p.push([i, j]); return p; };
+  const block = (speed, sys, texts, n) => {
+    const P = shuffle(pairs(sys.length)).slice(0, n); let pool = []; const out = [];
+    for (const p of P) { if (!pool.length) pool = shuffle(texts.slice()); const t = pool.pop(); const sw = rng() < 0.5;
+      out.push({ speed, text: t, a: sw ? sys[p[1]] : sys[p[0]], b: sw ? sys[p[0]] : sys[p[1]], kind: "pair" }); }
+    return out;
+  };
+  const b1 = block("1", DATA.blocks["1"], DATA.s1, DATA.n1);
+  const pos = Math.floor(rng() * (b1.length + 1)); const swA = rng() < 0.5;
+  b1.splice(pos, 0, { speed: "1", text: DATA.anchor, a: swA ? DATA.anchorSys : DATA.realSys, b: swA ? DATA.realSys : DATA.anchorSys, kind: "anchor" });
+  const pairsOnly = b1.filter(t => t.kind === "pair"); const r = pairsOnly[Math.floor(rng() * pairsOnly.length)];
+  b1.push({ speed: "1", text: r.text, a: r.b, b: r.a, kind: "repeat" });
+  return [...b1, ...block("1.5", DATA.blocks["1.5"], DATA.fast, DATA.nF), ...block("2", DATA.blocks["2"], DATA.fast, DATA.nF)];
+}
+
+// ---- result code: bits -> base32 (Crockford-like) + 2-char checksum ----
+function encode(st) {
+  let bits = "";
+  const put = (v, n) => { bits += (v >>> 0).toString(2).padStart(n, "0").slice(-n); };
+  put(1, 4); put(st.seed, 24);
+  put(st.demo.age, 3); put(st.demo.gender, 3); put(st.demo.hearing, 3); put(st.demo.device, 3); put(st.demo.env, 2); put(st.demo.eng, 3); put(st.demo.tts, 2); put(st.demo.team, 2);
+  for (const r of st.ratings) put(r, 3);
+  put(Math.min(63, Math.round((st.tEnd - st.tStart) / 60000)), 6);
+  while (bits.length % 5) bits += "0";
+  let s = ""; for (let i = 0; i < bits.length; i += 5) s += ALPH[parseInt(bits.slice(i, i + 5), 2)];
+  let h = 2166136261 >>> 0; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  s += ALPH[h & 31] + ALPH[(h >>> 5) & 31];
+  return "VAB1-" + s.match(/.{1,4}/g).join("-");
+}
+
+// ---- views ----
+let S = null; let plan = null;
+const views = ["v-welcome", "v-about", "v-check", "v-block", "v-trial", "v-done"];
+function show(v) { for (const x of views) $(x).hidden = x !== v; window.scrollTo(0, 0); }
+function rail() {
+  const n = plan.length, k = S.ratings.length; $("rail").hidden = false; $("fill").style.width = (100 * k / n) + "%"; $("raillbl").textContent = `Pair ${Math.min(k + 1, n)} of ${n}`;
+}
+function save() { store.set(S); }
+function clip(speed, text, sys) { return "audio/" + DATA.clips[`${text}|${speed}|${sys}`]; }
+
+function makePlayer(btn, stateEl, progEl, label) {
+  const au = new Audio(); au.preload = "auto"; let done = false;
+  au.addEventListener("timeupdate", () => { if (au.duration) progEl.style.width = (100 * au.currentTime / au.duration) + "%"; });
+  au.addEventListener("ended", () => { done = true; stateEl.textContent = "Played"; btn.textContent = "Play " + label + " again"; progEl.style.width = "100%"; onPlayed(); });
+  au.addEventListener("error", () => { stateEl.textContent = "Could not load this recording. Check your connection and press Play again."; });
+  btn.onclick = () => { stopAll(); au.currentTime = 0; au.play().then(() => { stateEl.textContent = "Playing"; }).catch(() => { stateEl.textContent = "Press Play again to start the sound."; }); };
+  return { au, get done() { return done; }, load(src) { done = false; au.src = src; au.load(); stateEl.textContent = "Not played yet"; btn.textContent = "Play " + label; progEl.style.width = "0"; } };
+}
+let PA, PB, PC; function stopAll() { for (const p of [PA, PB, PC]) if (p && !p.au.paused) p.au.pause(); }
+function onPlayed() {
+  if ($("v-check").hidden === false) { $("b-check-next").disabled = !PC.done; return; }
+  const ok = PA.done && PB.done; for (const b of $("scale").children) b.disabled = !ok; if (ok) $("tr-err").hidden = true;
+}
+
+const BLOCKS = { "1": ["Part 1 of 3 · normal speed", "Normal speaking speed", "Both recordings in each pair are at normal speaking speed."],
+                 "1.5": ["Part 2 of 3 · 1.5 times faster", "Faster speech: 1.5 times normal", "From now on, both recordings in each pair are spoken about 1.5 times faster than normal. Judge how natural they sound at this speed."],
+                 "2": ["Part 3 of 3 · 2 times faster", "Fast speech: 2 times normal", "From now on, both recordings in each pair are spoken about twice as fast as normal. Judge how natural they sound at this speed."] };
+function next() {
+  const k = S.ratings.length; if (k >= plan.length) return finish();
+  const t = plan[k]; if (t.speed !== S.lastBlock) { S.lastBlock = t.speed; save(); const B = BLOCKS[t.speed];
+    $("blk-eyebrow").textContent = B[0]; $("blk-title").textContent = B[1]; $("blk-text").textContent = B[2]; rail(); show("v-block"); return; }
+  rail(); $("tr-eyebrow").textContent = BLOCKS[t.speed][0];
+  PA.load(clip(t.speed, t.text, t.a)); PB.load(clip(t.speed, t.text, t.b)); S.pick = null;
+  for (const b of $("scale").children) { b.disabled = true; b.setAttribute("aria-pressed", "false"); }
+  $("b-next").disabled = true; $("tr-err").hidden = true; show("v-trial");
+  const n2 = plan[k + 1]; if (n2) { new Audio(clip(n2.speed, n2.text, n2.a)).preload = "auto"; new Audio(clip(n2.speed, n2.text, n2.b)).preload = "auto"; }
+}
+function finish() {
+  if (!S.tEnd) { S.tEnd = Date.now(); save(); } stopAll(); $("rail").hidden = true; const c = encode(S); $("code").textContent = c;
+  show("v-done"); submit(c);
+}
+const LABELS = { age: Q.age, gender: Q.gender, hearing: Q.hearing, device: Q.device, env: Q.env, eng: Q.eng, tts: Q.tts, team: Q.team };
+function setStatus(msg, cls) { const el = $("send-status"); el.textContent = msg; el.className = "status" + (cls ? " " + cls : ""); }
+async function submit(code) {
+  const url = (window.LISTEN_CONFIG || {}).submitUrl || "";
+  if (S.sent) { setStatus("Your answers have been received. Thank you!", "ok"); return; }
+  if (!url.startsWith("https://script.google.com/")) {
+    setStatus("Please copy the code below and send it to the person who invited you.", ""); $("send-fallback").hidden = true; return;
+  }
+  const demo = {}; for (const k in S.demo) demo[k] = LABELS[k][S.demo[k]];
+  const body = JSON.stringify({ v: 1, code, seed: S.seed, demo, minutes: Math.min(63, Math.round((S.tEnd - S.tStart) / 60000)), site: location.hostname,
+    trials: plan.map((t, i) => ({ i, kind: t.kind, speed: t.speed, text: t.text, a: t.a, b: t.b, rating: S.ratings[i] })) });
+  setStatus("Sending your answers…", ""); $("retry-row").hidden = true;
+  try {
+    const r = await fetch(url, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body });
+    const j = await r.json(); if (!j.ok) throw new Error(j.error || "not ok");
+    S.sent = true; save(); setStatus("Your answers have been received. Thank you! You can close this page.", "ok"); $("send-fallback").hidden = true;
+  } catch (e) {
+    try { await fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body });
+      S.sent = true; save(); setStatus("Your answers have been sent. Thank you! You can close this page.", "ok");
+    } catch (e2) { setStatus("We could not send your answers automatically.", "bad"); $("retry-row").hidden = false; $("send-fallback").hidden = false; }
+  }
+}
+
+function init() {
+  for (const [k, id] of FIELDS) { const el = $(id); el.innerHTML = `<option value="">Choose…</option>` + Q[k].map((o, i) => `<option value="${i}">${o}</option>`).join(""); }
+  $("scale").innerHTML = SCALE.map((s, i) => `<button type="button" data-v="${i}" aria-pressed="false" disabled>${s}</button>`).join("");
+  PA = makePlayer($("pa"), $("sa"), $("ga"), "A"); PB = makePlayer($("pb"), $("sb"), $("gb"), "B"); PC = makePlayer($("b-check"), $("checkstate"), $("checkprog"), "");
+  $("consent").onchange = () => { $("b-start").disabled = !$("consent").checked; };
+  $("b-start").onclick = () => { show("v-about"); };
+  $("b-about").onclick = () => {
+    const demo = {}; for (const [k, id] of FIELDS) { const v = $(id).value; if (v === "") { $("about-err").hidden = false; return; } demo[k] = +v; }
+    const a = new Uint32Array(1); try { crypto.getRandomValues(a); } catch (e) { a[0] = Math.floor(Math.random() * 4294967296); }
+    S = { seed: a[0] & 0xFFFFFF, demo, ratings: [], tStart: Date.now(), lastBlock: null }; plan = makePlan(S.seed); save();
+    PC.load("audio/" + DATA.checkClip); show("v-check");
+  };
+  $("b-check-next").onclick = () => { stopAll(); next(); };
+  $("b-block").onclick = () => next();
+  $("scale").onclick = e => { const b = e.target.closest("button"); if (!b || b.disabled) return;
+    for (const x of $("scale").children) x.setAttribute("aria-pressed", x === b ? "true" : "false"); S.pick = +b.dataset.v; $("b-next").disabled = false; };
+  $("b-next").onclick = () => { if (!(PA.done && PB.done)) { $("tr-err").hidden = false; return; } if (S.pick == null) return;
+    stopAll(); S.ratings.push(S.pick); S.pick = null; save(); next(); };
+  $("b-retry").onclick = () => submit($("code").textContent);
+  $("b-copy").onclick = () => { const c = $("code").textContent; navigator.clipboard.writeText(c).then(() => { $("copied").hidden = false; })
+    .catch(() => { const r = document.createRange(); r.selectNodeContents($("code")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }); };
+  const old = store.get();
+  if (old && old.seed != null && old.demo) { S = old; plan = makePlan(S.seed); if (S.ratings.length >= plan.length) return finish(); S.lastBlock = null; next(); return; }
+  show("v-welcome");
+}
+init();
+</script>
+</body>
+</html>

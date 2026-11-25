@@ -52,6 +52,14 @@ input.codein { font-family: var(--font-mono); font-size: 18px; letter-spacing: .
 textarea { font: inherit; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); width: 100%; resize: vertical; }
 .small { font-size: 13px; }
 .lead { font-size: 17px; }
+.welcome h2.sec { font-size: 18px; margin-top: 6px; }
+ol.steps { margin: 0; padding-left: 22px; display: grid; gap: 8px; max-width: 65ch; }
+.timetable { display: grid; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.timetable > div { display: flex; justify-content: space-between; gap: 12px; padding: 9px 14px; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.timetable > div:first-child { border-top: 0; }
+.timetable > div span:last-child { white-space: nowrap; color: var(--muted); }
+.timetable > div.total { background: var(--accent-soft); font-weight: 600; }
+.timetable > div.total span:last-child { color: var(--ink); }
 .glance { display: grid; gap: 8px; border-radius: 10px; background: var(--accent-soft); padding: 14px; }
 .glance > div { display: grid; grid-template-columns: 4.5rem 1fr; gap: 10px; align-items: baseline; }
 .glance .k { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
@@ -109,35 +117,58 @@ a.sendlink { display: inline-block; text-decoration: none; border-radius: 8px; }
 <div class="wrap">
   <div class="rail" id="rail" hidden><div class="bar"><div class="fill" id="fill"></div></div><div class="lbl" id="raillbl"></div></div>
 
-  <section id="v-welcome" class="card">
-    <div class="eyebrow">Listening study</div>
+  <section id="v-welcome" class="card welcome">
+    <div class="eyebrow">Listening study · about 15–20 minutes in total</div>
     <h1>Which voice sounds more natural?</h1>
-    <p class="lead">Listen to two short recordings of the same sentence and pick the one that sounds more like a real person. You do this 34 times. There are no right or wrong answers: go with your first impression.</p>
-    <div class="glance">
-      <div><span class="k">Time</span><span class="v">About 15–20 minutes</span></div>
-      <div><span class="k">Parts</span><span class="v">3 short parts: normal speed (~8 min), 1.5× faster (~4 min), 2× faster (~3 min), with a break between parts</span></div>
-      <div><span class="k">Setup</span><span class="v">Headphones or earphones in a quiet place, if you can</span></div>
+    <p class="lead">Thank you for your interest. This study is part of a PhD research project on speech synthesis, the technology that lets computers read text aloud. You will hear short recordings of English sentences and tell us which ones sound more like a real person reading. Your answers help us find out how close computer voices come to human speech, at normal speed and when they speak faster.</p>
+
+    <h2 class="sec">What you will do</h2>
+    <ol class="steps">
+      <li><strong>A few questions about you</strong> (about 1 minute): your age band, gender, any hearing difficulty, what you are listening on, how noisy the room is, your English, and how often you hear computer voices. Every question has a "Prefer not to say" option.</li>
+      <li><strong>A short sound check</strong>: you play one recording and set a comfortable volume.</li>
+      <li><strong>34 pairs of recordings</strong>, in three parts. In each pair, both recordings say exactly the same sentence at the same speed. Recording A plays first, then recording B. You then choose which one sounds more natural, and by how much.</li>
+      <li><strong>An optional comment</strong> at the end, where you can tell us anything you noticed.</li>
+      <li><strong>Done.</strong> Your answers are sent automatically.</li>
+    </ol>
+
+    <h2 class="sec">How long it takes</h2>
+    <div class="timetable" role="table" aria-label="Time for each part">
+      <div role="row"><span role="cell">Questions about you and sound check</span><span role="cell">about 2 min</span></div>
+      <div role="row"><span role="cell">Part 1 · normal speed · 16 pairs</span><span role="cell">about 8 min</span></div>
+      <div role="row"><span role="cell">Part 2 · 1.5 times faster · 9 pairs</span><span role="cell">about 4 min</span></div>
+      <div role="row"><span role="cell">Part 3 · 2 times faster · 9 pairs</span><span role="cell">about 3 min</span></div>
+      <div role="row"><span role="cell">Optional comment</span><span role="cell">about 1 min</span></div>
+      <div role="row" class="total"><span role="cell">Total</span><span role="cell">about 15–20 min</span></div>
     </div>
-    <details class="about">
-      <summary>About your answers and privacy</summary>
-      <ul class="facts">
-        <li>Some recordings are computer voices and some are a real person. You are not told which is which.</li>
-        <li>Taking part is voluntary. You can stop at any time; nothing is sent until you finish.</li>
-        <li>We ask a few questions about you (age band, gender, hearing, how you are listening). We never ask your name or contact details.</li>
-        <li>Your answers are sent automatically when you finish and are reported only as group results in research on speech synthesis.</li>
-      </ul>
-    </details>
-    <div class="sgic">
-      <p class="muted small">So that each person takes part only once, please answer three quick questions. Your browser turns the answers into a scrambled anonymous ID; your answers themselves are never sent or stored.</p>
-      <div class="field"><label for="id-parent">First two letters of your mother's (or a parent's) first name</label>
-        <input id="id-parent" type="text" autocomplete="off" spellcheck="false" maxlength="2" class="codein" placeholder="MA"></div>
-      <div class="field"><label for="id-day">Day of the month you were born</label><select id="id-day"></select></div>
-      <div class="field"><label for="id-town">First two letters of the town or city where you were born</label>
-        <input id="id-town" type="text" autocomplete="off" spellcheck="false" maxlength="2" class="codein" placeholder="KO"></div>
-    </div>
-    <label class="check"><input type="checkbox" id="consent"><span>I am 18 or older, I have read the above, and I agree to take part.</span></label>
+    <p class="muted small">You can take a break between parts. If you close the page by accident, open the same link again in the same browser and you will continue where you stopped.</p>
+
+    <h2 class="sec">How to answer</h2>
+    <ul class="facts">
+      <li><strong>"Natural"</strong> means: sounds like a real person reading aloud. Listen to the whole recording: the voice itself, the rhythm and pauses, the melody of the sentence, and how clear the words are.</li>
+      <li>Some recordings are computer voices and some are a real person. You are not told which is which, and the order is shuffled differently for every listener.</li>
+      <li>There are <strong>no right or wrong answers</strong>. Go with your first impression; you do not need to listen many times.</li>
+      <li>If two recordings sound equally natural, choose <strong>"About the same"</strong>.</li>
+      <li>In parts 2 and 3 the speech is faster on purpose. Judge how natural it sounds <em>at that speed</em>.</li>
+    </ul>
+
+    <h2 class="sec">Before you start</h2>
+    <ul class="facts">
+      <li>Use <strong>headphones or earphones</strong> if you can, in a <strong>quiet place</strong>.</li>
+      <li>The study works on phones, tablets and computers. A stable internet connection helps the recordings load quickly.</li>
+      <li>You can take part if you are 18 or older. Any level of English is welcome, with or without hearing difficulties; the questions at the start let us take this into account.</li>
+    </ul>
+
+    <h2 class="sec">Your privacy</h2>
+    <ul class="facts">
+      <li>We <strong>never ask for your name, e-mail address or any account</strong>, and we do not record your IP address.</li>
+      <li>Your answers are anonymous. They are used only for this research and reported only as group results (for example, averages over all listeners).</li>
+      <li><strong>Each person should take part once.</strong> To help with this, your browser keeps a small note that you have taken part on this device, and a scrambled device signature (a code made from general device settings such as screen size, language and time zone, which cannot identify you) is stored with your answers so that repeated entries can be removed.</li>
+      <li>Taking part is voluntary. You can stop at any time, and nothing is sent until you finish.</li>
+    </ul>
+
+    <label class="check"><input type="checkbox" id="consent"><span>I am 18 or older, I have read the information above, and I agree to take part.</span></label>
     <div class="err" id="start-err" hidden></div>
-    <button class="primary" id="b-start" disabled>Continue</button>
+    <button class="primary" id="b-start" disabled>Start the study</button>
   </section>
 
   <section id="v-about" class="card" hidden>
@@ -250,11 +281,25 @@ function makePlan(seed) {
   return [...b1, ...block("1.5", DATA.blocks["1.5"], DATA.fast, DATA.nF), ...block("2", DATA.blocks["2"], DATA.fast, DATA.nF)];
 }
 
-// ---- anonymous participant ID (self-generated): SHA-256 of three answers only the listener knows, made in the browser; only the ID is sent ----
+// ---- once per device (no personal questions): a random browser ID (local storage + cookie) and a scrambled device signature ----
 let PENDING_CODE = "";
-function letters2(v) { const s = String(v || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/[^\p{L}]/gu, ""); return s.length >= 2 ? s.slice(0, 2) : ""; }
-function sgicAnswers(p, d, t) { const a = letters2(p), b = letters2(t), day = parseInt(d, 10); return (a && b && day >= 1 && day <= 31) ? `VAB979|${a}|${day}|${b}` : ""; }
-async function anonId(s) { const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)); return [...new Uint8Array(h)].slice(0, 8).map(x => x.toString(16).padStart(2, "0")).join(""); }
+function cookieGet(k) { try { const m = document.cookie.match(new RegExp("(?:^|; )" + k + "=([^;]*)")); return m ? decodeURIComponent(m[1]) : ""; } catch (e) { return ""; } }
+function cookieSet(k, v) { try { document.cookie = `${k}=${encodeURIComponent(v)}; max-age=31536000; path=/; SameSite=Lax; Secure`; } catch (e) {} }
+function browserId() {
+  let id = ""; try { id = localStorage.getItem("vab_bid") || ""; } catch (e) {}
+  if (!/^[0-9a-f]{16}$/.test(id)) id = cookieGet("vab_bid");
+  if (!/^[0-9a-f]{16}$/.test(id)) { const a = new Uint8Array(8); crypto.getRandomValues(a); id = [...a].map(x => x.toString(16).padStart(2, "0")).join(""); }
+  try { localStorage.setItem("vab_bid", id); } catch (e) {} cookieSet("vab_bid", id); return id;
+}
+async function deviceSig() {                                             // browser-independent device settings only; scrambled, not reversible
+  const sw = screen.width, sh = screen.height, n = navigator;
+  const f = [(n.userAgentData && n.userAgentData.platform) || n.platform || "", Math.min(sw, sh) + "x" + Math.max(sw, sh), screen.colorDepth, window.devicePixelRatio,
+             Intl.DateTimeFormat().resolvedOptions().timeZone || "", (n.language || "").toLowerCase(), n.hardwareConcurrency || "", n.deviceMemory || "", n.maxTouchPoints || 0].join("|");
+  try { const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("VAB979dev|" + f)); return [...new Uint8Array(h)].slice(0, 8).map(x => x.toString(16).padStart(2, "0")).join(""); }
+  catch (e) { return "none"; }
+}
+function markDone() { cookieSet("vab_done", "1"); try { localStorage.setItem("vab_done", "1"); } catch (e) {} }
+function isDone() { let d = cookieGet("vab_done") === "1"; try { d = d || localStorage.getItem("vab_done") === "1"; } catch (e) {} return d; }
 
 // ---- result code: bits -> base32 (Crockford-like) + 2-char checksum ----
 function encode(st) {
@@ -314,6 +359,12 @@ function next() {
   AUTOB = true; PA.start();                                                // A plays by itself (we are inside the listener's click), then B
   const n2 = plan[k + 1]; if (n2) { new Audio(clip(n2.speed, n2.text, n2.a)).preload = "auto"; new Audio(clip(n2.speed, n2.text, n2.b)).preload = "auto"; }
 }
+function showAlreadyDone() {
+  stopAll(); $("rail").hidden = true; show("v-done");
+  for (const id of ["retry-row", "send-fallback", "b-copy", "copied"]) $(id).hidden = true; $("code").hidden = true;
+  const p = $("code").previousElementSibling; if (p) p.hidden = true;
+  setStatus("You have already taken part in this study on this device. Thank you! Each person can take part only once.", "ok");
+}
 function finish() {
   if (!S.tEnd) { S.tEnd = Date.now(); save(); } stopAll(); $("rail").hidden = true; const c = encode(S); $("code").textContent = c;
   show("v-done"); submit(c);
@@ -328,22 +379,24 @@ async function submit(code) {
     setStatus("Please copy the code below and send it to the person who invited you.", ""); $("send-fallback").hidden = true; return;
   }
   const demo = {}; for (const k in S.demo) demo[k] = LABELS[k][S.demo[k]];
-  const body = JSON.stringify({ v: 2, code, seed: S.seed, demo, minutes: Math.min(63, Math.round((S.tEnd - S.tStart) / 60000)), site: location.hostname,
-    participant: S.pcode || "", comment: S.comment || "",
+  const dev = await deviceSig();
+  const body = JSON.stringify({ v: 2, code, seed: S.seed, demo, minutes: Math.min(63, Math.round((S.tEnd - S.tStart) / 60000)), site: location.hostname + " | dev:" + dev,
+    participant: S.pcode || browserId(), comment: S.comment || "",
     trials: plan.map((t, i) => ({ i, kind: t.kind, speed: t.speed, text: t.text, a: t.a, b: t.b, rating: S.ratings[i] })) });
   setStatus("Sending your answers…", ""); $("retry-row").hidden = true;
   let j = null;
   try { const r = await fetch(url, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body }); j = await r.json(); } catch (e) { j = null; }
-  if (j && j.ok) { S.sent = true; save(); setStatus("Your answers have been received. Thank you! You can close this page.", "ok"); $("send-fallback").hidden = true; return; }
+  if (j && j.ok) { S.sent = true; save(); markDone(); setStatus("Your answers have been received. Thank you! You can close this page.", "ok"); $("send-fallback").hidden = true; return; }
   if (j && /^participant/.test(j.error || "")) {
-    S.rejected = j.error === "participant taken" ? "It looks like you have already taken part, so these answers were not recorded. Each person can take part only once."
-                                                 : "Your anonymous ID could not be checked, so these answers were not recorded.";
+    S.rejected = j.error === "participant taken" ? "It looks like you have already taken part on this device, so these answers were not recorded. Each person can take part only once."
+                                                 : "These answers could not be recorded. Please contact the person who invited you.";
+    markDone();
     save(); $("send-fallback").hidden = true; setStatus(S.rejected, "bad"); return;
   }
   if (j) { setStatus("We could not send your answers automatically.", "bad"); $("retry-row").hidden = false; $("send-fallback").hidden = false; return; }
   {
     try { await fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body });
-      S.sent = true; save(); setStatus("Your answers have been sent. Thank you! You can close this page.", "ok");
+      S.sent = true; save(); markDone(); setStatus("Your answers have been sent. Thank you! You can close this page.", "ok");
     } catch (e2) { setStatus("We could not send your answers automatically.", "bad"); $("retry-row").hidden = false; $("send-fallback").hidden = false; }
   }
 }
@@ -352,25 +405,8 @@ function init() {
   for (const [k, id] of FIELDS) { const el = $(id); el.innerHTML = `<option value="">Choose…</option>` + Q[k].map((o, i) => `<option value="${i}">${o}</option>`).join(""); }
   $("scale").innerHTML = SCALE.map((s, i) => `<button type="button" data-v="${i}" aria-pressed="false" aria-label="${s}" disabled><span class="s">${SHORT[i]}</span><span class="l">${s}</span></button>`).join("");
   PA = makePlayer($("pa"), $("sa"), $("ga"), "A"); PB = makePlayer($("pb"), $("sb"), $("gb"), "B"); PC = makePlayer($("b-check"), $("checkstate"), $("checkprog"), "");
-  $("id-day").innerHTML = `<option value="">Choose…</option>` + Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
-  const answers = () => sgicAnswers($("id-parent").value, $("id-day").value, $("id-town").value);
-  const startReady = () => { $("b-start").disabled = !($("consent").checked && answers()); };
-  for (const id of ["consent", "id-parent", "id-day", "id-town"]) { $(id).oninput = () => { $("start-err").hidden = true; startReady(); }; $(id).onchange = $(id).oninput; }
-  $("b-start").onclick = async () => {
-    const err = m => { $("start-err").textContent = m; $("start-err").hidden = false; };
-    const s = answers(); if (!s) return err("Please answer the three questions (two letters, a day, two letters).");
-    const url = (window.LISTEN_CONFIG || {}).submitUrl || ""; $("b-start").disabled = true; $("b-start").textContent = "Checking…";
-    try {
-      const id = await anonId(s);
-      if (url.startsWith("https://script.google.com/")) {
-        const r = await fetch(url + "?action=check&id=" + id); const j = await r.json();
-        if (j.status === "taken") return err("It looks like you have already taken part. Thank you! Each person can take part only once.");
-        if (j.status !== "ok") return err("Something went wrong while checking. Please try again in a moment.");
-      }
-      PENDING_CODE = id; show("v-about");
-    } catch (e) { err("We could not continue. Please check your internet connection and try again."); }
-    finally { $("b-start").textContent = "Continue"; startReady(); }
-  };
+  $("consent").onchange = () => { $("b-start").disabled = !$("consent").checked; };
+  $("b-start").onclick = () => { if (isDone()) return showAlreadyDone(); PENDING_CODE = browserId(); show("v-about"); };
   $("comment").oninput = () => { $("comment-count").textContent = `${$("comment").value.length} / 3000`; };
   $("b-finish").onclick = () => { S.comment = $("comment").value.slice(0, 3000); save(); finish(); };
   $("b-about").onclick = () => {
@@ -397,6 +433,7 @@ function init() {
   $("b-copy").onclick = () => { const c = $("code").textContent; navigator.clipboard.writeText(c).then(() => { $("copied").hidden = false; })
     .catch(() => { const r = document.createRange(); r.selectNodeContents($("code")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }); };
   const old = store.get();
+  if (isDone() && !(old && old.sent)) return showAlreadyDone();
   if (old && old.seed != null && old.demo) { S = old; plan = makePlan(S.seed); if (S.ratings.length >= plan.length) return finish(); S.lastBlock = null; next(); return; }
   show("v-welcome");
 }

@@ -19,9 +19,9 @@ faster), with a break between parts.
 ## Privacy
 
 - No names, e-mail addresses or accounts are needed.
-- A few multiple-choice questions describe the listener (age band, gender, hearing, how they are listening); every question has a
+- No IP addresses are recorded. A few multiple-choice questions describe the listener (age band, gender, hearing, how they are listening); every question has a
   "Prefer not to say" option.
-- **Each person can take part once.** At the start, listeners answer three questions only they know (two letters of a parent's first
-  name, day of birth, two letters of their birth town). The browser turns the answers into a one-way scrambled ID; only that ID is sent,
-  never the answers. An ID can submit once, and the stored answers are not linked to it.
+- **Each person should take part once,** without any personal questions: the browser keeps a small note that it has taken part, and
+  a scrambled device signature (made from general settings such as screen size, language and time zone; it cannot identify
+  anyone) is stored with the answers so that repeated entries from the same device can be removed in the analysis.
 - Answers are used only for research and reported as group results.
